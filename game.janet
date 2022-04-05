@@ -1,8 +1,14 @@
 (use freja/flow)
 
-(defonce legs (load-texture "assets/legs0000.png"))
-(defonce body (load-texture "assets/body0000.png"))
-(defonce head (load-texture "assets/head0000.png"))
+(var legs nil)
+(var body nil)
+(var head nil)
+
+(defn init
+  []
+  (set legs (load-texture "assets/legs0000.png"))
+  (set body (load-texture "assets/body0000.png"))
+  (set head (load-texture "assets/head0000.png")))
 
 (def player @{:target @[0 0]
               :in @[0 0]
@@ -94,4 +100,5 @@
 
 (start-game {:render render
              :on-event on-event
+             :init init
              :scale 3})
