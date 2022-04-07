@@ -71,7 +71,7 @@
   [start stop a]
   (let [start start
         stop stop
-        rad (* 0.5 (math/abs (shortest-angle start stop)))
+        rad (* 0.5 (math/abs (- start stop)))
         middle-angle (+ start rad)
         dist (shortest-angle a middle-angle)]
     (cond

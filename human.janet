@@ -15,63 +15,67 @@
   (def lookaway (tau/shortest-angle (human :target-angle)
                                     (human :walk-angle)))
 
-  (when (> (math/abs lookaway) (- 1 back-width))
+  (def trying-to-move (m/v-zero? (human :in)))
+
+  (when (and (not trying-to-move)
+             (> (math/abs lookaway) (- 1 0.5)))
     (update human :legs-target-angle (fn [a] (tau/normalize (- a 1)))))
 
   (update human :pos v/v+ (-> (v/normalize (human :in))
-                              (v/v* (* (m/lerp 0.5 1 (- 1 (math/abs lookaway)))
+                              (v/v* (* (m/lerp 0.3 1 (- 1 (math/abs lookaway)))
                                        (human :speed)))))
 
-  (let [{:legs-target-angle ta
-         :pos pos
-         :angles {:legs la
-                  :body ba}} human
+  (when (not trying-to-move)
+    (let [{:legs-target-angle ta
+           :pos pos
+           :angles {:legs la
+                    :body ba}} human
 
-        move-angle (tau/shortest-angle la ta)
-        move-sector [la (+ la move-angle)]
+          move-angle (tau/shortest-angle la ta)
+          move-sector [la (+ la move-angle)]
 
-        start (- (- ba 1) back-width)
-        back-angle (tau/shortest-angle start (+ start back-width back-width))
-        back-sector [start (+ start back-width back-width)]
+          start (- (- ba 1) back-width)
+          back-angle (tau/shortest-angle start (+ start back-width back-width))
+          back-sector [start (+ start back-width back-width)]
 
-        overlap (tau/sector-overlap move-sector back-sector)]
+          overlap (tau/sector-overlap move-sector back-sector)]
 
-    '(defer (rl-pop-matrix)
-       (rl-push-matrix)
-       (rl-scalef 0.3333 0.3333 1)
-       (draw-text (string/format "back: %.02f" ba) [10 35] :color :white)
-       (draw-text (string/format "back-sector: %.02f %.02f" ;back-sector) [10 60] :color :white))
+      '(defer (rl-pop-matrix)
+         (rl-push-matrix)
+         (rl-scalef 0.3333 0.3333 1)
+         (draw-text (string/format "back: %.02f" ba) [10 35] :color :white)
+         (draw-text (string/format "back-sector: %.02f %.02f" ;back-sector) [10 60] :color :white))
 
-    (defer (rl-pop-matrix)
-      (rl-push-matrix)
-      (rl-translatef ;pos 0)
-      (tau/draw-circle-sector
-        [0 0]
-        100
-        ;move-sector
-        10
-        :blue)
-      (tau/draw-circle-sector
-        [0 0]
-        80
-        ;back-sector
-        10
-        :red))
+      '(defer (rl-pop-matrix)
+         (rl-push-matrix)
+         (rl-translatef ;pos 0)
+         (tau/draw-circle-sector
+           [0 0]
+           100
+           ;move-sector
+           10
+           :blue)
+         (tau/draw-circle-sector
+           [0 0]
+           80
+           ;back-sector
+           10
+           :red))
 
-    (when overlap
-      (draw-text "OUCH" [10 100] :color :white))
+      '(when overlap
+         (draw-text "OUCH" [10 100] :color :white))
 
-    (put-in
-      human
-      [:angles :legs]
-      (-> move-angle
-          (* (if overlap -0.05 0.05))
-          (+ la)
-          tau/normalize)))
+      (put-in
+        human
+        [:angles :legs]
+        (-> move-angle
+            (* (if overlap -0.05 0.05))
+            (+ la)
+            tau/normalize))))
 
   (update-in human [:angles :head]
              (fn [a]
-               (-> (+ a (* 1 (tau/shortest-angle a (human :target-angle))))
+               (-> (+ a (* 0.5 (tau/shortest-angle a (human :target-angle))))
                    tau/normalize)))
 
   (update-in human [:angles :body]
@@ -86,10 +90,26 @@
   (let [{:body ba
          :head ha
          :legs la} (human :angles)
-        h-diff 0.5
-        diff 0.5
-        new-body-angle (tau/angle-clamp (- la diff) (+ la diff) ba)
-        new-head-angle (tau/angle-clamp (- la h-diff) (+ la h-diff) ha)]
+        h-diff 0.7
+        diff 0.6
+        new-body-angle ba
+        a '(-> (tau/angle-clamp (- la diff) (+ la diff) ba)
+               #(tau/normalize)
+)
+        new-head-angle
+        (m/lerp
+          ha
+          (+ ha
+             (tau/shortest-angle
+               ha
+               (tau/angle-clamp (- la h-diff) (+ la h-diff) ha)))
+          0.1)
+
+        body-diff (tau/shortest-angle la ba)]
+
+    (when (> (math/abs body-diff) diff)
+      (update-in human [:angles :legs]
+                 + (* 0.03 body-diff)))
 
     (put-in human [:angles :head] (tau/normalize new-head-angle))
 
