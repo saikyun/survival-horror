@@ -15,6 +15,7 @@
   (merge-into state/player
               @{:target @[0 0]
                 :speed 2
+                :back-width 0.2
                 :in @[0 0]
                 :walk-angle 0
                 :legs-target-angle 0
