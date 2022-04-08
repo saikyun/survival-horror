@@ -9,6 +9,10 @@
   [t]
   (math/round (* 180 t)))
 
+(defn ->rad
+  [t]
+  (* t math/pi))
+
 (defn rad->tau
   [r]
   (/ r math/pi))
@@ -16,6 +20,10 @@
 (defn normalize
   [t]
   (mod t 2))
+
+(def sin (comp math/sin ->rad))
+(def cos (comp math/cos ->rad))
+(def acos (comp rad->tau math/acos))
 
 (defn atan2
   ``
