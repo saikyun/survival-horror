@@ -58,6 +58,11 @@
 
       v)))
 
+(defn inverse-atan
+  [a]
+  [(cos a)
+   (sin a)])
+
 ### sector
 
 (defn sector-overlap
