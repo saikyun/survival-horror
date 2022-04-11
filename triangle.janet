@@ -51,6 +51,8 @@
                                      (- (tau/sin lower-a))]
                                     lower-l))]
 
+    # gonna rotate triangle
+
     #(printf "lower-a: %p" lower-a)
 
     #(rl-rotatef (* 180 (/ (tau/atan2 (dir 1) (dir 0)) math/pi)) 0 0 1)
