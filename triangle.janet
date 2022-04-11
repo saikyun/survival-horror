@@ -19,6 +19,7 @@
   ``
   Takes triangle side lengths side1-3.
   Uses "Law of cosines".
+  Order of side1 and side2 should not matter.
   Returns the angle opposite of side3.
   
     A  <-- returned angle
@@ -33,19 +34,20 @@
           (- (* side3 side3)))
        (* 2 side1 side2))))
 
-(defn left-arm
+(defn refresh-arm
   ``
   Takes table representing an arm.
-  start / stop is [x y]
-  upper-length / lower-length is the length of the upper and lower arm.
-
-  
+  Keys:
+  :shoulder-pos / :wrist-pos is [x y]
+  :upper-length / :lower-length is the length of the upper and lower arm
+  :left? is truthy if it is a left arm
   ``
   [arm]
   (let [{:shoulder-pos start
          :wrist-pos stop
          :upper-arm-length upper-l
-         :lower-arm-length lower-l} arm
+         :lower-arm-length lower-l
+         :left? left?} arm
         reach-vector (v/v- stop start)
         reach-dist (max (min (+ upper-l lower-l)
                              (v/mag reach-vector))
@@ -53,33 +55,40 @@
         reach-dir (v/normalize reach-vector)
         reach-a (tau/atan2xy ;reach-dir)
 
+        # angle from shoulder -> elbow
         upper-a (-> (sides->angle reach-dist upper-l lower-l)
+                    (* (if left?
+                         -1
+                         1))
                     (+ reach-a))
 
-        end (v/v+ [0 0] (v/v* reach-dir reach-dist))
+        elbow-pos (v/v* (tau/inverse-atan upper-a)
+                        upper-l)
 
-        elbow-pos (v/v*
-                    [(tau/cos upper-a)
-                     (tau/sin upper-a)]
-                    upper-l)
-
+        # angle from elbow -> wrist
         lower-a (-> (sides->angle reach-dist lower-l upper-l)
-                    (- reach-a))
+                    (* (if left?
+                         1
+                         -1))
+                    (+ reach-a))
 
-        wrist-pos (v/v+ elbow-pos
-                        (v/v* [(tau/cos lower-a)
-                               (- (tau/sin lower-a))]
-                              lower-l))]
+        wrist-pos (-> (tau/inverse-atan lower-a)
+                      (v/v* lower-l)
+                      (v/v+ elbow-pos))]
+
     (-> arm
         (put :reach-distance reach-dist) # distance between shoulder and wrist
         (put :reach-angle reach-a) # angle between shoulder and wrist
         (put :upper-arm-angle upper-a)
         (put :elbow-pos elbow-pos)
         (put :lower-arm-angle lower-a)
-        (put :wrist-pos wrist-pos))
+        (put :wrist-pos wrist-pos))))
 
-    (draw-line-ex (arm :shoulder-pos) (arm :elbow-pos) 3 :blue)
-    (draw-line-ex (arm :elbow-pos) (arm :wrist-pos) 2 :green)))
+(def arm
+  @{:shoulder-pos [0 0]
+    :wrist-pos [0 0]
+    :upper-arm-length 50
+    :lower-arm-length 40})
 
 (defn render
   [{:width rw :height rh}]
@@ -95,10 +104,18 @@
 
   (rl-translatef ;origin 0)
 
-  (left-arm @{:shoulder-pos origin
-              :wrist-pos mp
-              :upper-arm-length 50
-              :lower-arm-length 40}))
+  (put arm :wrist-pos (v/v- mp origin))
+  (put arm :left? false)
+  (refresh-arm arm)
+
+  (draw-line-ex (arm :shoulder-pos) (arm :elbow-pos) 3 :blue)
+  (draw-line-ex (arm :elbow-pos) (arm :wrist-pos) 2 :green)
+
+  (put arm :left? true)
+  (refresh-arm arm)
+
+  (draw-line-ex (arm :shoulder-pos) (arm :elbow-pos) 3 :blue)
+  (draw-line-ex (arm :elbow-pos) (arm :wrist-pos) 2 :green))
 
 (defn on-event
   [_ ev]
