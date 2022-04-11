@@ -1,6 +1,7 @@
 (use freja/flow)
 (import ./state :as s)
 (import ./math :as m)
+(import ./joint)
 (import ./tau-is-180-degrees :as tau)
 
 (defn set-target-angles
@@ -117,7 +118,6 @@
   (move human)
 
   (rotate-body-parts human))
-
 
 (defn render
   [human]
