@@ -28,11 +28,19 @@
 (defn atan2
   ``
   atan2, returns angle in tau.
+  Takes y then x.
+  ``
+  [y x]
+  (-> (math/atan2 y x)
+      rad->tau))
+
+(defn atan2xy
+  ``
+  atan2, returns angle in tau.
   Takes x then y, so one can splice x/y vectors.
   ``
   [x y]
-  (-> (math/atan2 y x)
-      rad->tau))
+  (atan2 y x))
 
 (defn shortest-angle
   ``
