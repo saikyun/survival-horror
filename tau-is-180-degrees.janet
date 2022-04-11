@@ -135,3 +135,24 @@
   ``
   [x1 y1 x2 y2]
   (shortest-angle (atan2 x1 y1) (atan2 x2 y2)))
+
+### triangles
+
+(defn sides->angle
+  ``
+  Takes triangle side lengths side1-3.
+  Uses "Law of cosines".
+  Order of side1 and side2 should not matter.
+  Returns the angle opposite of side3.
+  
+    A  <-- returned angle
+  1/ \2
+  /___\
+    3
+  ``
+  [side1 side2 side3]
+  (acos
+    (/ (+ (* side1 side1)
+          (* side2 side2)
+          (- (* side3 side3)))
+       (* 2 side1 side2))))
