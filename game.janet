@@ -17,6 +17,7 @@
   (set state/right-upper-arm (load-texture "assets/right-upper-arm0000.png"))
   (set state/right-lower-arm (load-texture "assets/right-lower-arm0000.png"))
   (set state/right-hand (load-texture "assets/right-hand0000.png"))
+  (set state/right-hand-closed (load-texture "assets/right-hand-closed0000.png"))
 
   (merge-into state/player
               @{:target @[0 0]
@@ -35,8 +36,8 @@
                 :right-arm @{:shoulder-pos @[0 0]
                              :shoulder-offset [1 8]
                              :wrist-pos @[0 0]
-                             :upper-arm-length 10
-                             :lower-arm-length 16}}))
+                             :upper-arm-length 16
+                             :lower-arm-length 21}}))
 
 ### rendering
 
