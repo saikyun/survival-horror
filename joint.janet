@@ -31,8 +31,9 @@
                          1))
                     (+ reach-a))
 
-        elbow-pos (v/v* (tau/inverse-atan upper-a)
-                        upper-l)
+        elbow-pos (-> (v/v* (tau/inverse-atan upper-a)
+                            upper-l)
+                      (v/v+ start))
 
         # angle from elbow -> wrist
         lower-a (-> (tau/sides->angle reach-dist lower-l upper-l)
