@@ -117,7 +117,7 @@
 
   (move human)
 
-  (rotate-body-parts human)
+  '(rotate-body-parts human)
 
   (let [arm (human :right-arm)]
     (put arm :shoulder-pos
@@ -144,18 +144,43 @@
       (rl-push-matrix)
       (rl-rotatef (tau/->deg (angles :legs)) 0 0 1)
       (draw-texture s/legs -5 -15 :white))
-    (defer (rl-pop-matrix)
-      (rl-push-matrix)
-      (rl-rotatef (tau/->deg (angles :body)) 0 0 1)
-      (draw-texture s/body -5 -13 :white))
-    (defer (rl-pop-matrix)
-      (rl-push-matrix)
-      (rl-rotatef (tau/->deg (angles :head)) 0 0 1)
-      (draw-texture s/head -5 -9 :white))
+
+    '(defer (rl-pop-matrix)
+       (rl-push-matrix)
+       (rl-rotatef (tau/->deg (angles :body)) 0 0 1)
+       (draw-texture s/body -5 -13 :white))
 
     (let [{:shoulder-pos shoulder
+           :upper-arm-angle upper-arm-angle
+           :lower-arm-angle lower-arm-angle
            :elbow-pos elbow
            :wrist-pos wrist} (human :right-arm)]
 
       (draw-line-ex shoulder elbow 3 :green)
-      (draw-line-ex elbow wrist 2 :blue))))
+      (draw-line-ex elbow wrist 2 :blue)
+
+      (defer (rl-pop-matrix)
+        (rl-push-matrix)
+        (rl-translatef ;shoulder 0)
+        (rl-rotatef (-> (+ upper-arm-angle (angles :body))
+                        tau/->deg) 0 0 1)
+        (draw-texture s/right-upper-arm -5 -4 :white))
+
+      (defer (rl-pop-matrix)
+        (rl-push-matrix)
+        (rl-translatef ;elbow 0)
+        (rl-rotatef (-> (+ lower-arm-angle (angles :body))
+                        tau/->deg) 0 0 1)
+        (draw-texture s/right-lower-arm 0 -4 :white))
+
+      (defer (rl-pop-matrix)
+        (rl-push-matrix)
+        (rl-translatef ;wrist 0)
+        (rl-rotatef (-> (+ lower-arm-angle (angles :body))
+                        tau/->deg) 0 0 1)
+        (draw-texture s/right-hand 0 -6 :white)))
+
+    (defer (rl-pop-matrix)
+      (rl-push-matrix)
+      (rl-rotatef (tau/->deg (angles :head)) 0 0 1)
+      (draw-texture s/head -5 -9 :white))))

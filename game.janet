@@ -11,6 +11,12 @@
   (set state/legs (load-texture "assets/legs0000.png"))
   (set state/body (load-texture "assets/body0000.png"))
   (set state/head (load-texture "assets/head0000.png"))
+  (set state/upper-arm (load-texture "assets/upper-arm0000.png"))
+  (set state/lower-arm (load-texture "assets/lower-arm0000.png"))
+  (set state/hand (load-texture "assets/hand0000.png"))
+  (set state/right-upper-arm (load-texture "assets/right-upper-arm0000.png"))
+  (set state/right-lower-arm (load-texture "assets/right-lower-arm0000.png"))
+  (set state/right-hand (load-texture "assets/right-hand0000.png"))
 
   (merge-into state/player
               @{:target @[0 0]
@@ -27,10 +33,10 @@
                 :render |(human/render $)
 
                 :right-arm @{:shoulder-pos @[0 0]
-                             :shoulder-offset [0 10]
+                             :shoulder-offset [1 8]
                              :wrist-pos @[0 0]
-                             :upper-arm-length 50
-                             :lower-arm-length 50}}))
+                             :upper-arm-length 10
+                             :lower-arm-length 16}}))
 
 ### rendering
 
@@ -51,7 +57,8 @@
              tau/sin
              (* 100)
              math/floor))
-  (draw-circle (+ 200 x) 10 10 :white))
+  #(draw-circle (+ 200 x) 10 10 :white)
+  )
 
 (start-game {:render render
              :on-event input/on-event
