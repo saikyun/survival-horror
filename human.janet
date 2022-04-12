@@ -29,14 +29,15 @@
                (-> (+ a (* 0.5 (tau/shortest-angle a (human :target-angle))))
                    tau/normalize)))
 
-  (update-in human [:angles :body]
-             (fn [a]
-               (-> (+ a (* 0.1 (tau/shortest-angle
-                                 a
-                                 (+ (/ (- (* 12 #(math/random)
-                                             1) 6) 180)
-                                    (human :target-angle)))))
-                   tau/normalize)))
+  (unless (mouse-button-down? 1)
+    (update-in human [:angles :body]
+               (fn [a]
+                 (-> (+ a (* 0.1 (tau/shortest-angle
+                                   a
+                                   (+ (/ (- (* 12 #(math/random)
+                                               1) 6) 180)
+                                      (human :target-angle)))))
+                     tau/normalize))))
 
   (when (not trying-to-move)
     (let [{:legs-target-angle ta
@@ -117,7 +118,7 @@
 
   (move human)
 
-  '(rotate-body-parts human)
+  (rotate-body-parts human)
 
   (let [arm (human :right-arm)]
     (put arm :shoulder-pos
@@ -125,10 +126,12 @@
                       (get-in human [:angles :body]))
                    tau/inverse-atan)
                (v/mag (arm :shoulder-offset))))
-    (put arm :wrist-pos (-> (v/v- (human :target)
-                                  (human :pos))
-                            #(v/v+ (arm :shoulder-pos))
-))
+
+    (update arm :wrist-pos
+            |(m/v-lerp $
+                       (-> (v/v- (human :target)
+                                 (human :pos)))
+                       0.3))
 
     (joint/refresh-arm arm)))
 
@@ -162,23 +165,26 @@
       (defer (rl-pop-matrix)
         (rl-push-matrix)
         (rl-translatef ;shoulder 0)
-        (rl-rotatef (-> (+ upper-arm-angle (angles :body))
+        (rl-rotatef (-> (+ upper-arm-angle # (angles :body)
+)
                         tau/->deg) 0 0 1)
         (draw-texture s/right-upper-arm -5 -4 :white))
 
       (defer (rl-pop-matrix)
         (rl-push-matrix)
         (rl-translatef ;elbow 0)
-        (rl-rotatef (-> (+ lower-arm-angle (angles :body))
+        (rl-rotatef (-> (+ lower-arm-angle # (angles :body)
+)
                         tau/->deg) 0 0 1)
-        (draw-texture s/right-lower-arm 0 -4 :white))
+        (draw-texture s/right-lower-arm -2 -3 :white))
 
       (defer (rl-pop-matrix)
         (rl-push-matrix)
         (rl-translatef ;wrist 0)
-        (rl-rotatef (-> (+ lower-arm-angle (angles :body))
+        (rl-rotatef (-> (+ lower-arm-angle #(angles :body)
+)
                         tau/->deg) 0 0 1)
-        (draw-texture s/right-hand 0 -6 :white)))
+        (draw-texture s/right-hand -10 -5 :white)))
 
     (defer (rl-pop-matrix)
       (rl-push-matrix)
