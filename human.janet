@@ -9,10 +9,10 @@
   (let [{:in in
          :target target
          :pos pos} human]
-    (put human :target-angle (tau/atan2 ;(v/v- target pos)))
+    (put human :target-angle (tau/atan2xy ;(v/v- target pos)))
 
     (unless (m/v-zero? in)
-      (let [a (tau/atan2 ;in)]
+      (let [a (tau/atan2xy ;in)]
         (put human :walk-angle a)
         (put human :legs-target-angle (human :walk-angle))))
 
