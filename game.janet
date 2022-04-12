@@ -24,7 +24,13 @@
                           :body 0
                           :legs 0}
                 :tick |(human/tick $)
-                :render |(human/render $)}))
+                :render |(human/render $)
+
+                :right-arm @{:shoulder-pos @[0 0]
+                             :shoulder-offset [0 10]
+                             :wrist-pos @[0 0]
+                             :upper-arm-length 50
+                             :lower-arm-length 50}}))
 
 ### rendering
 

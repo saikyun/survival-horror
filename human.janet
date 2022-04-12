@@ -117,7 +117,20 @@
 
   (move human)
 
-  (rotate-body-parts human))
+  (rotate-body-parts human)
+
+  (let [arm (human :right-arm)]
+    (put arm :shoulder-pos
+         (v/v* (-> (+ (tau/atan2xy ;(arm :shoulder-offset))
+                      (get-in human [:angles :body]))
+                   tau/inverse-atan)
+               (v/mag (arm :shoulder-offset))))
+    (put arm :wrist-pos (-> (v/v- (human :target)
+                                  (human :pos))
+                            #(v/v+ (arm :shoulder-pos))
+))
+
+    (joint/refresh-arm arm)))
 
 (defn render
   [human]
@@ -139,5 +152,10 @@
       (rl-push-matrix)
       (rl-rotatef (tau/->deg (angles :head)) 0 0 1)
       (draw-texture s/head -5 -9 :white))
-    #(draw-circle 0 0 1 :white)
-))
+
+    (let [{:shoulder-pos shoulder
+           :elbow-pos elbow
+           :wrist-pos wrist} (human :right-arm)]
+
+      (draw-line-ex shoulder elbow 3 :green)
+      (draw-line-ex elbow wrist 2 :blue))))
