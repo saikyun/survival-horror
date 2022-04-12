@@ -28,14 +28,24 @@
 
 ### rendering
 
+(var t 0)
+
 (defn render
   [el]
+  (+= t (get-frame-time))
+
   (clear-background (map |(/ $ 255) [24 10 10]))
   (loop [go :in state/gos]
     (:tick go))
 
   (loop [go :in state/gos]
-    (:render go)))
+    (:render go))
+
+  (def x (-> t
+             tau/sin
+             (* 100)
+             math/floor))
+  (draw-circle (+ 200 x) 10 10 :white))
 
 (start-game {:render render
              :on-event input/on-event
