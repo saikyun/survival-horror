@@ -18,6 +18,7 @@
   (set state/right-lower-arm (load-texture "assets/right-lower-arm0000.png"))
   (set state/right-hand (load-texture "assets/right-hand0000.png"))
   (set state/right-hand-closed (load-texture "assets/right-hand-closed0000.png"))
+  (set state/items (load-texture "assets/items0000.png"))
 
   (merge-into state/player
               @{:target @[0 0]
@@ -59,7 +60,7 @@
              (* 100)
              math/floor))
   #(draw-circle (+ 200 x) 10 10 :white)
-  )
+)
 
 (start-game {:render render
              :on-event input/on-event

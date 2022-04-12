@@ -10,6 +10,7 @@
 (var right-lower-arm nil)
 (var right-hand nil)
 (var right-hand-closed nil)
+(var items nil)
 
 (def player @{})
 
