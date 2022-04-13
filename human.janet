@@ -2,6 +2,7 @@
 (import ./state :as s)
 (import ./math :as m)
 (import ./joint)
+(import bounded-queue :as queue)
 (import ./tau-is-180-degrees :as tau)
 
 ### do stuff
@@ -11,7 +12,7 @@
   (let [{:in in
          :target target
          :pos pos} human]
-    (put human :target-angle (tau/atan2xy ;(v/v- target pos)))
+    (put human :target-angle (tau/atan2xy ;target))
 
     (unless (m/v-zero? in)
       (let [a (tau/atan2xy ;in)]
@@ -98,6 +99,11 @@
 
     (put-in human [:angles :body] (tau/normalize new-body-angle))))
 
+(defn arm-length
+  [{:right-arm {:upper-arm-length u
+                :lower-arm-length l}}]
+  (+ u l))
+
 (defn move
   [human]
   (let [{:lookaway lookaway
@@ -105,7 +111,14 @@
          :speed speed} human
         slowdown (m/lerp 0.3 1 (- 1 (math/abs lookaway)))
         delta (-> (v/normalize in)
-                  (v/v* (* slowdown speed)))]
+                  (v/v* (* slowdown speed)))
+        target-dist (- (v/mag (human :target))
+                       (arm-length human))
+        delta (if (pos? target-dist)
+                (v/v+ delta
+                      (v/v* (v/normalize (human :target))
+                            (* (get-frame-time) target-dist)))
+                delta)]
     (update human :pos v/v+ delta)))
 
 (defn pick-up
@@ -116,7 +129,16 @@
 (defn release-item
   [human]
   (let [item (human :holding)]
-    (put item :vel (human :hand-vel))
+    # calculates average velocity of hand last few frames
+    (var vel @[0 0])
+    (var i 0)
+    (loop [[x y] :iterate (queue/pop (human :last-hand-vels))]
+      (update vel 0 + x)
+      (update vel 1 + y)
+      (++ i))
+    (update vel 0 / i)
+    (update vel 1 / i)
+    (put item :vel vel)
     (put human :holding nil)
     (put item :layer nil)))
 
@@ -145,8 +167,7 @@
                    tau/inverse-atan)
                (v/mag (arm :shoulder-offset))))
 
-    (let [rel-target (v/v- (human :target) (human :pos))
-          target-hand-dir (-> rel-target
+    (let [target-hand-dir (-> (human :target)
                               (v/v- (arm :wrist-pos)))
           hand-acc (v/v* target-hand-dir 20)
           hand-acc (if (< 0.5 (math/abs (tau/vector-shortest-angle ;hand-acc
@@ -167,8 +188,11 @@
 
     (joint/refresh-arm arm))
 
-  (unless (human :grabbing)
+  (if (human :grabbing)
+    (queue/push (human :last-hand-vels) (human :hand-vel))
     (put human :grab-time 0))
+
+  (put human :target (get-in human [:right-arm :wrist-pos]))
 
   (cond (human :grabbing)
     (do (update human :grab-time + (get-frame-time))
@@ -180,7 +204,7 @@
                           (hand-pos-abs human))
           (set to-grab go))
 
-        (when (>= 15 (v/dist (go :pos) (hand-pos-abs human)))
+        (when (>= 20 (v/dist (go :pos) (hand-pos-abs human)))
           (set almost-grab go)))
       (cond to-grab
         (:grab to-grab human)
@@ -188,7 +212,7 @@
         almost-grab
         (update human :target
                 m/v-lerp
-                (almost-grab :pos)
+                (v/v- (almost-grab :pos) (human :pos))
                 (* 0.7 (min 1 (human :grab-time))))))
 
     (and (not (human :grabbing))
@@ -270,6 +294,7 @@
       :mouse-diff @[0 0]
       :walk-angle 0
       :grab-time 0
+      :last-hand-vels (queue/new 5)
       :hand-vel @[0 0]
       :legs-target-angle 0
       :angles @{:head 0

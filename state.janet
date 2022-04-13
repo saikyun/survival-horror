@@ -15,6 +15,8 @@
 (var items nil)
 (var key-source [0 0 32 32])
 
+(var last-mouse-pos @[0 0])
+
 (def player @{})
 
 

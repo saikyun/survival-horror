@@ -1,4 +1,5 @@
 (import ./state :as s)
+(use freja/flow)
 (import freja/vector-math :as v)
 
 (def down-key
@@ -16,12 +17,18 @@
 (defn on-event
   [el ev]
   (when-let [p (ev :mouse/pos)]
-    (put s/player :target (v/v+ p (s/player :mouse-diff))))
+    (let [delta (v/v- p s/last-mouse-pos)]
+      (put s/player :mouse/delta delta)
+      (update s/player :target v/v+ delta)
+      (set s/last-mouse-pos p))
+
+    (when (el :focused?)
+      (disable-cursor)))
 
   (match ev
     {:mouse/down _}
     (put s/player :grabbing true)
-    
+
     {:mouse/release _}
     (put s/player :grabbing false)
 
