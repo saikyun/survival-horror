@@ -40,14 +40,28 @@
                              :upper-arm-length 16
                              :lower-arm-length 21}}))
 
-### rendering
+(defn lock-mouse
+  [render-pos]
+  (let [{:target target
+         :pos pos
+         :right-arm {:upper-arm-length upper-arm-length
+                     :lower-arm-length lower-arm-length}} state/player
+        reach-dir (v/v- target pos)
+        reach-mag (min (v/mag reach-dir)
+                       (+ lower-arm-length upper-arm-length))
+        new-pos (-> (v/normalize reach-dir)
+                    (v/v* reach-mag))
+        abs-pos (-> new-pos
+                    (v/v+ pos)
+                    (v/v* state/render-scale)
+                    (v/v+ render-pos))]
+    (hide-cursor)
+    (set-mouse-position ;(map math/floor abs-pos))))
 
-(var t 0)
+### rendering
 
 (defn render
   [el]
-  (+= t (get-frame-time))
-
   (clear-background (map |(/ $ 255) [24 10 10]))
   (loop [go :in state/gos]
     (:tick go))
@@ -55,14 +69,11 @@
   (loop [go :in state/gos]
     (:render go))
 
-  (def x (-> t
-             tau/sin
-             (* 100)
-             math/floor))
-  #(draw-circle (+ 200 x) 10 10 :white)
-)
+  (if (el :focused?)
+    (lock-mouse [(el :render-x) (el :render-y)])
+    (show-cursor)))
 
 (start-game {:render render
-             :on-event input/on-event
+             :on-event |(input/on-event $0 $1)
              :init init
-             :scale 3})
+             :scale state/render-scale})

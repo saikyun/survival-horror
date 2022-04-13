@@ -131,7 +131,7 @@
             |(m/v-lerp $
                        (-> (v/v- (human :target)
                                  (human :pos)))
-                       0.3))
+                       0.7))
 
     (joint/refresh-arm arm)))
 

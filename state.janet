@@ -1,5 +1,7 @@
 # assets holders and state
 
+(var render-scale 3)
+
 (var legs nil)
 (var body nil)
 (var head nil)
