@@ -4,6 +4,8 @@
 (import ./joint)
 (import ./tau-is-180-degrees :as tau)
 
+### do stuff
+
 (defn set-target-angles
   [human]
   (let [{:in in
@@ -106,6 +108,22 @@
                   (v/v* (* slowdown speed)))]
     (update human :pos v/v+ delta)))
 
+(defn pick-up
+  [human item]
+  (put human :holding item)
+  (put item :layer -1))
+
+(defn release-item
+  [human]
+  (let [item (human :holding)]
+    (put item :vel (human :hand-vel))
+    (put human :holding nil)
+    (put item :layer nil)))
+
+(defn hand-pos-abs
+  [{:pos pos :right-arm {:wrist-pos wrist-pos}}]
+  (v/v+ pos wrist-pos))
+
 (defn tick
   [human]
   (set-target-angles human)
@@ -127,24 +145,62 @@
                    tau/inverse-atan)
                (v/mag (arm :shoulder-offset))))
 
-    (update arm :wrist-pos
-            |(m/v-lerp $
-                       (-> (v/v- (human :target)
-                                 (human :pos)))
-                       0.7))
+    (let [rel-target (v/v- (human :target) (human :pos))
+          target-hand-dir (-> rel-target
+                              (v/v- (arm :wrist-pos)))
+          hand-acc (v/v* target-hand-dir 20)
+          hand-acc (if (< 0.5 (math/abs (tau/vector-shortest-angle ;hand-acc
+                                                                   ;(human :hand-vel))))
+                     (v/v* hand-acc 10)
+                     hand-acc)]
+      (update human :hand-vel v/v+ hand-acc)
+      (update human :hand-vel v/v* 0.5)
+      (update human :hand-vel (fn [hv]
+                                (let [mag (v/mag hv)
+                                      max-vel 300
+                                      n (v/normalize hv)]
+                                  (if (> mag max-vel)
+                                    (v/v* n max-vel)
+                                    hv)))))
+
+    (update arm :wrist-pos v/v+ (v/v* (human :hand-vel) (get-frame-time)))
 
     (joint/refresh-arm arm))
 
-  (when (human :grabbing)
-    (loop [go :in s/gos
-           :when (go :grab)]
-      (tracev go)
-      (:grab go human)))
+  (unless (human :grabbing)
+    (put human :grab-time 0))
+
+  (cond (human :grabbing)
+    (do (update human :grab-time + (get-frame-time))
+      (var to-grab nil)
+      (var almost-grab nil)
+      (loop [go :in s/gos
+             :when (go :grab)]
+        (when (:can-grab? go
+                          (hand-pos-abs human))
+          (set to-grab go))
+
+        (when (>= 15 (v/dist (go :pos) (hand-pos-abs human)))
+          (set almost-grab go)))
+      (cond to-grab
+        (:grab to-grab human)
+
+        almost-grab
+        (update human :target
+                m/v-lerp
+                (almost-grab :pos)
+                (* 0.7 (min 1 (human :grab-time))))))
+
+    (and (not (human :grabbing))
+         (human :holding))
+    (release-item human))
 
   (when-let [i (human :holding)]
     (put i :rot (+ 0.1 (get-in human [:right-arm :lower-arm-angle])))
     (put i :pos (v/v+ (human :pos)
                       (get-in human [:right-arm :wrist-pos])))))
+
+### render
 
 (defn render
   [human]
@@ -206,11 +262,6 @@
       (rl-rotatef (tau/->deg (angles :head)) 0 0 1)
       (draw-texture s/head -5 -9 :white))))
 
-(defn pick-up
-  [human item]
-  (put human :holding item)
-  (put item :layer -1))
-
 (defn new
   [data]
   (merge-into
@@ -218,6 +269,8 @@
       :in @[0 0]
       :mouse-diff @[0 0]
       :walk-angle 0
+      :grab-time 0
+      :hand-vel @[0 0]
       :legs-target-angle 0
       :angles @{:head 0
                 :body 0
