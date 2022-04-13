@@ -3,6 +3,7 @@
 (import ./state)
 (import ./human)
 (import ./tau-is-180-degrees :as tau)
+(import ./key)
 
 ### initialization
 
@@ -20,26 +21,20 @@
   (set state/right-hand-closed (load-texture "assets/right-hand-closed0000.png"))
   (set state/items (load-texture "assets/items0000.png"))
 
-  (merge-into state/player
-              @{:target @[0 0]
-                :speed 2
-                :back-width 0.2
-                :in @[0 0]
-                :mouse-diff @[0 0]
-                :walk-angle 0
-                :legs-target-angle 0
-                :pos @[50 50]
-                :angles @{:head 0
-                          :body 0
-                          :legs 0}
-                :tick |(human/tick $)
-                :render |(human/render $)
+  (merge-into state/player (human/new
+                             @{:speed 2
+                               :back-width 0.2
+                               :pos @[50 50]
 
-                :right-arm @{:shoulder-pos @[0 0]
-                             :shoulder-offset [2 8]
-                             :wrist-pos @[0 0]
-                             :upper-arm-length 16
-                             :lower-arm-length 21}}))
+                               :right-arm @{:shoulder-pos @[0 0]
+                                            :shoulder-offset [2 8]
+                                            :wrist-pos @[0 0]
+                                            :upper-arm-length 16
+                                            :lower-arm-length 16}}))
+
+  (array/clear state/gos)
+  (array/push state/gos state/player)
+  (array/push state/gos (key/new @{:pos @[10 10]})))
 
 (defn lock-mouse
   ``
@@ -47,36 +42,50 @@
   Should probably change to relative positions / deltas for :target.
   ``
   [render-pos]
-  (let [{:target target
-         :pos pos
-         :right-arm {:upper-arm-length upper-arm-length
-                     :lower-arm-length lower-arm-length
-                     :shoulder-offset shoulder-offset}} state/player
-        reach-dir (v/v- target pos)
-        reach-mag (min (v/mag reach-dir)
-                       (+ lower-arm-length upper-arm-length))
-        new-pos (-> (v/normalize reach-dir)
-                    (v/v* reach-mag))
-        abs-pos (-> new-pos
-                    (v/v+ pos)
-                    (v/v* state/render-scale)
-                    (v/v+ render-pos))
-        new-mp (map math/round abs-pos)]
-    (put state/player :target (v/v+ pos new-pos))
-    (hide-cursor)
-    (put state/player :mouse-diff (v/v- abs-pos new-mp))
-    (set-mouse-position ;new-mp)))
+  '(let [{:target target
+          :pos pos
+          :right-arm {:upper-arm-length upper-arm-length
+                      :lower-arm-length lower-arm-length
+                      :shoulder-offset shoulder-offset}} state/player
+         reach-dir (v/v- target pos)
+         reach-mag (min (v/mag reach-dir)
+                        (+ lower-arm-length upper-arm-length))
+         new-pos (-> (v/normalize reach-dir)
+                     (v/v* reach-mag))
+         abs-pos (-> new-pos
+                     (v/v+ pos)
+                     (v/v* state/render-scale)
+                     (v/v+ render-pos))
+         new-mp (map math/round abs-pos)]
+     (put state/player :target (v/v+ pos new-pos))
+     (hide-cursor)
+     (put state/player :mouse-diff (v/v- abs-pos new-mp))
+     (set-mouse-position ;new-mp)))
 
 ### rendering
+
+(def layers
+  @[@[]
+    @[]
+    @[]])
 
 (defn render
   [el]
   (clear-background (map |(/ $ 255) [24 10 10]))
-  (loop [go :in state/gos]
-    (:tick go))
+
+  (loop [l :in layers]
+    (array/clear l))
 
   (loop [go :in state/gos]
+    (:tick go)
+    (update layers (+ 1 (get go :layer 0)) array/push go))
+
+  (loop [l :in layers
+         go :in l]
     (:render go))
+
+  '(loop [go :in state/gos]
+     (:render go))
 
   (if (el :focused?)
     (lock-mouse [(el :render-x) (el :render-y)])

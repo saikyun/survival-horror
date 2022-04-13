@@ -13,8 +13,9 @@
 (var right-hand nil)
 (var right-hand-closed nil)
 (var items nil)
+(var key-source [0 0 32 32])
 
 (def player @{})
 
 
-(def gos @[player])
+(def gos @[])

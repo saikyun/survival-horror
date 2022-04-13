@@ -108,9 +108,6 @@
 
 (defn tick
   [human]
-
-  (def reach-dir (v/v- (human :target) (human :pos)))
-
   (set-target-angles human)
 
   (def trying-to-move (m/v-zero? (human :in)))
@@ -138,7 +135,16 @@
 
     (joint/refresh-arm arm))
 
-  (put human :target (v/v+ (human :pos) reach-dir)))
+  (when (human :grabbing)
+    (loop [go :in s/gos
+           :when (go :grab)]
+      (tracev go)
+      (:grab go human)))
+
+  (when-let [i (human :holding)]
+    (put i :rot (+ 0.1 (get-in human [:right-arm :lower-arm-angle])))
+    (put i :pos (v/v+ (human :pos)
+                      (get-in human [:right-arm :wrist-pos])))))
 
 (defn render
   [human]
@@ -189,9 +195,34 @@
         (rl-rotatef (-> (+ lower-arm-angle #(angles :body)
 )
                         tau/->deg) 0 0 1)
-        (draw-texture s/right-hand -10 -5 :white)))
+
+        (draw-texture (if (human :holding)
+                        s/right-hand-closed
+                        s/right-hand)
+                      -4 -5 :white)))
 
     (defer (rl-pop-matrix)
       (rl-push-matrix)
       (rl-rotatef (tau/->deg (angles :head)) 0 0 1)
       (draw-texture s/head -5 -9 :white))))
+
+(defn pick-up
+  [human item]
+  (put human :holding item)
+  (put item :layer -1))
+
+(defn new
+  [data]
+  (merge-into
+    @{:target @[0 0]
+      :in @[0 0]
+      :mouse-diff @[0 0]
+      :walk-angle 0
+      :legs-target-angle 0
+      :angles @{:head 0
+                :body 0
+                :legs 0}
+      :tick |(tick $)
+      :render |(render $)
+      :pick-up |(pick-up $0 $1)}
+    data))

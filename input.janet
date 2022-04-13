@@ -15,9 +15,15 @@
 
 (defn on-event
   [el ev]
+  (when-let [p (ev :mouse/pos)]
+    (put s/player :target (v/v+ p (s/player :mouse-diff))))
+
   (match ev
-    {:mouse/move p}
-    (put s/player :target (v/v+ p (s/player :mouse-diff)))
+    {:mouse/down _}
+    (put s/player :grabbing true)
+    
+    {:mouse/release _}
+    (put s/player :grabbing false)
 
     ({:key/down k} (down-key k))
     (update-in s/player ;(down-key k))
