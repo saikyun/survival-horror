@@ -36,32 +36,6 @@
   (array/push state/gos state/player)
   (array/push state/gos (key/new @{:pos @[10 10]})))
 
-(defn lock-mouse
-  ``
-  For some reason has a clear bias toward the left, not sure why.
-  Should probably change to relative positions / deltas for :target.
-  ``
-  [render-pos]
-  '(let [{:target target
-          :pos pos
-          :right-arm {:upper-arm-length upper-arm-length
-                      :lower-arm-length lower-arm-length
-                      :shoulder-offset shoulder-offset}} state/player
-         reach-dir (v/v- target pos)
-         reach-mag (min (v/mag reach-dir)
-                        (+ lower-arm-length upper-arm-length))
-         new-pos (-> (v/normalize reach-dir)
-                     (v/v* reach-mag))
-         abs-pos (-> new-pos
-                     (v/v+ pos)
-                     (v/v* state/render-scale)
-                     (v/v+ render-pos))
-         new-mp (map math/round abs-pos)]
-     (put state/player :target (v/v+ pos new-pos))
-     (hide-cursor)
-     (put state/player :mouse-diff (v/v- abs-pos new-mp))
-     (set-mouse-position ;new-mp)))
-
 ### rendering
 
 (def layers
@@ -84,11 +58,8 @@
          go :in l]
     (:render go))
 
-  '(loop [go :in state/gos]
-     (:render go))
-
   (if (el :focused?)
-    (lock-mouse [(el :render-x) (el :render-y)])
+    nil # hide cursor here latel
     (show-cursor)))
 
 (start-game {:render render
