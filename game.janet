@@ -25,6 +25,7 @@
                 :speed 2
                 :back-width 0.2
                 :in @[0 0]
+                :mouse-diff @[0 0]
                 :walk-angle 0
                 :legs-target-angle 0
                 :pos @[50 50]
@@ -35,17 +36,22 @@
                 :render |(human/render $)
 
                 :right-arm @{:shoulder-pos @[0 0]
-                             :shoulder-offset [1 8]
+                             :shoulder-offset [2 8]
                              :wrist-pos @[0 0]
                              :upper-arm-length 16
                              :lower-arm-length 21}}))
 
 (defn lock-mouse
+  ``
+  For some reason has a clear bias toward the left, not sure why.
+  Should probably change to relative positions / deltas for :target.
+  ``
   [render-pos]
   (let [{:target target
          :pos pos
          :right-arm {:upper-arm-length upper-arm-length
-                     :lower-arm-length lower-arm-length}} state/player
+                     :lower-arm-length lower-arm-length
+                     :shoulder-offset shoulder-offset}} state/player
         reach-dir (v/v- target pos)
         reach-mag (min (v/mag reach-dir)
                        (+ lower-arm-length upper-arm-length))
@@ -54,9 +60,12 @@
         abs-pos (-> new-pos
                     (v/v+ pos)
                     (v/v* state/render-scale)
-                    (v/v+ render-pos))]
+                    (v/v+ render-pos))
+        new-mp (map math/round abs-pos)]
+    (put state/player :target (v/v+ pos new-pos))
     (hide-cursor)
-    (set-mouse-position ;(map math/floor abs-pos))))
+    (put state/player :mouse-diff (v/v- abs-pos new-mp))
+    (set-mouse-position ;new-mp)))
 
 ### rendering
 

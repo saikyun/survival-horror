@@ -1,4 +1,5 @@
 (import ./state :as s)
+(import freja/vector-math :as v)
 
 (def down-key
   @{:a [[:in 0] dec]
@@ -16,7 +17,7 @@
   [el ev]
   (match ev
     {:mouse/move p}
-    (put s/player :target p)
+    (put s/player :target (v/v+ p (s/player :mouse-diff)))
 
     ({:key/down k} (down-key k))
     (update-in s/player ;(down-key k))

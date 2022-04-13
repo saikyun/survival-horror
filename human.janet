@@ -67,7 +67,7 @@
          :head ha
          :legs la} (human :angles)
         h-diff 0.7
-        diff 0.6
+        diff 0.2
 
         new-body-angle
         (+ ba
@@ -108,6 +108,9 @@
 
 (defn tick
   [human]
+
+  (def reach-dir (v/v- (human :target) (human :pos)))
+
   (set-target-angles human)
 
   (def trying-to-move (m/v-zero? (human :in)))
@@ -116,7 +119,7 @@
              (> (math/abs (human :lookaway)) (- 1 0.5)))
     (update human :legs-target-angle (fn [a] (tau/normalize (- a 1)))))
 
-  (move human)
+  (def delta (move human))
 
   (rotate-body-parts human)
 
@@ -133,7 +136,9 @@
                                  (human :pos)))
                        0.7))
 
-    (joint/refresh-arm arm)))
+    (joint/refresh-arm arm))
+
+  (put human :target (v/v+ (human :pos) reach-dir)))
 
 (defn render
   [human]
@@ -148,10 +153,10 @@
       (rl-rotatef (tau/->deg (angles :legs)) 0 0 1)
       (draw-texture s/legs -5 -15 :white))
 
-    '(defer (rl-pop-matrix)
-       (rl-push-matrix)
-       (rl-rotatef (tau/->deg (angles :body)) 0 0 1)
-       (draw-texture s/body -5 -13 :white))
+    (defer (rl-pop-matrix)
+      (rl-push-matrix)
+      (rl-rotatef (tau/->deg (angles :body)) 0 0 1)
+      (draw-texture s/body -5 -13 :white))
 
     (let [{:shoulder-pos shoulder
            :upper-arm-angle upper-arm-angle
